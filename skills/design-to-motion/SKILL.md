@@ -69,7 +69,7 @@ Website rules:
 Gather these before building. Ask only for what is missing, and ask in one batch.
 
 - **Context.** Showcase or website (see "Two contexts"). Decide this first.
-- **Source.** A Figma link with a node id is best. A flat image works, but its layers cannot be separated perfectly (see A2).
+- **Source.** A Figma link with a node id is best. A screenshot or flat image works, but every layer has to be rebuilt from the pixels (see "Screenshot or flat image" in A2).
 - **Layout.** Decide it yourself from the tree (A5): an **app frame** (a dashboard or app screen built from joined surfaces, such as a sidebar and a body) or **separate cards** (a bento grid, a card set, widgets). The two load differently.
 - **Background.** Is there a photo or texture behind the UI? Assume it must stay exactly as designed.
 - **Visuals.** Which parts are visuals that should act out a story after load (B4)? Assume every chart, list, stack, calendar, flow, prompt, photo, media control, and status indicator.
@@ -88,9 +88,46 @@ If the user cannot answer, make a reasonable assumption, state it in one line, a
 - Note the frame's absolute origin. Every layer position is `absolute bounds − origin`.
 - The image URLs the API returns point at a CDN that sometimes resets connections. Retry every download, and check each PNG's size before using it.
 
-**Flat image only.** The image is the reference. Rebuild what you can isolate, and tell the user plainly which parts cannot be separated before you animate them. Never fake fidelity by animating a screenshot as one block.
+### Screenshot or flat image
+
+A screenshot has no layers, no exact values, and nothing behind what you can see. It still works, but every element has to be rebuilt or lifted out of the pixels. A3's export table is Figma only; this section replaces it. A4 to A7 and all of Part B apply as usual.
+
+**Ask once, then continue.** In the intake batch, ask for a Figma link if one exists (it gives a better result), the highest resolution export they have (2x or 3x, PNG, uncropped, not a JPEG), and, if the design sits on a photo, the original background image. If they have none of these, continue with what you have.
+
+**Set the stage.** Find the pixel ratio before measuring anything. Divide the image width by common frame widths (1440, 1280, 1920, 390) and pick the one that gives a whole ratio, then check it against text: UI body text is usually 14 to 18px. The stage is the image size divided by that ratio, in CSS pixels. The screenshot is the reference for A7, resized to 2x of the stage if it is a different scale.
+
+**Measure in screenshot pixels.** Pixel `i` covers `i` to `i + 1`, so its centre is `i + 0.5`; mixing the two puts round shapes half a pixel off. At a 2x ratio many positions land on half CSS pixels. Keep them. If the still then shows elements one device pixel off, Chrome is snapping them: lay the stage out in screenshot pixels and scale it by `1 / ratio`, and scale every motion distance by the same ratio.
+
+**Choose how each element is made**, in this order of preference. Use the first one that fits:
+
+| Element | How |
+|---|---|
+| Surfaces, cards, pills, buttons, inputs, dividers, bars, skeleton lines, progress tracks | **Rebuild in CSS.** Sample each fill as the median of a flat patch, never a single pixel. Measure radii from the corner curve and borders from the edge profile. **Gradients:** sample a row of pixels along the gradient every 10 to 20px and use each sample as a stop, so a multi stop or uneven fade comes out right; when it also changes across the other axis, layer a second gradient. **Shadows:** render candidates and compare the profile of pixels across the edge with the reference, searching blur, offset, and opacity until the error stops dropping |
+| Text, website | Live HTML in the site's font, as always |
+| Text, showcase | Identify the font: ask, or match it by eye against common UI faces (Inter, SF Pro, Geist, Manrope, DM Sans, Satoshi, Plus Jakarta Sans). Retype it in HTML and overlay it on the reference. Overlay the HTML on the reference at 2x. The match is close when each line's width is within 1% and every baseline within one screenshot pixel; PSNR cannot judge text, since even the right font scores low on it. Keep a close match, since it stays sharp and can type or count. Otherwise lift the text out of the pixels (next row) |
+| Text, icons, and glyphs on a flat or gradient surface | **Lift them out** as a transparent layer by un-blending against the surface colour you rebuilt. For single colour content: `alpha = (bg − px) / (bg − fg)` per pixel, using the channel with the largest contrast, then store `fg` with that alpha. Its edges then sit on your CSS surface without a seam. In practice: render your rebuilt surfaces first and un-blend against that render, not a guessed colour. Estimate `fg` once per text group (a heading, a paragraph, a link), not per box. Keep each box a few pixels clear of container edges and other elements, or they merge into it. Where pixels hold more than one colour (a two tone icon, colour fringes), fall back to colour to alpha against the surface |
+| Simple icons | Redraw as SVG when the set is recognisable (Lucide, Phosphor, Heroicons, Material): it stays sharp at any scale. Otherwise lift them out as above |
+| Lines and connectors | Trace the centerline from the pixels (the middle of the stroke in each column or row) and draw them as SVG strokes. They can then draw on (B4) without the mask trick |
+| Charts | Bars as CSS with measured heights. Lines and areas as SVG paths traced per column. They can then animate |
+| Photos, avatars, logos, illustrations | **Crop** from the screenshot, masked to their container's radius. These are the only rectangular crops |
+| Text, badges, or icons on top of a photo | They stay inside the photo crop and move only with it. List them as not separable |
+
+**What is hidden stays hidden.** Anything under another element (the part of a card behind an overlapping card, a list behind a dropdown, the background behind a panel) does not exist in the image. Never invent it silently.
+
+- **Flat or gradient backgrounds** rebuild in CSS, so the empty state is exact.
+- **Photo backgrounds** need the original image for any layout where cards rise in (A5), because the empty state shows what is behind them. Without it, tell the user before building and offer two choices: the parts behind the cards are filled in (inpainted, so they are guessed), or the layout is treated like an app frame, where the surfaces stay and only their contents load. Never fill it in without saying so.
+- **Overlaps between elements.** Choose motion that never reveals a hidden area. If the story needs one (a card sliding off another), rebuild the lower element fully in CSS, so nothing has to be guessed.
+- **Hidden parts that shape something visible** (a line that passes under a card, a tint whose edge runs underneath it): continue the simplest geometry that joins the visible ends (a straight run, or the same arc radius), and list it as guessed.
+
+**Resolution.** A lifted layer or crop is only as sharp as the screenshot. Record exports at a scale no higher than the screenshot's own ratio wherever cropped pixels make up a large part of the frame, or rebuild more in CSS and SVG. When the screenshot is 1x, say up front that the result will be softer than a Figma build.
+
+**Story limits.** Lifted text can type and delete (B4), but it cannot count: counters need live text in a matching font. Without one, choose another story for that visual.
+
+**Tell the user before animating**, in a short list: what was rebuilt in CSS or SVG, what was lifted or cropped, what could not be separated, and what was guessed (the font, the pixel ratio, any hidden area). Never fake fidelity by animating the screenshot as one block, or by moving crops that carry their old background with them.
 
 ## A3. Layer export
+
+Figma sources only. From a screenshot, use the table in "Screenshot or flat image" (A2) instead.
 
 Export every element that will move as its own PNG at **3x** through `/v1/images`, batched 20 to 25 ids per call.
 
@@ -110,7 +147,7 @@ Export every element that will move as its own PNG at **3x** through `/v1/images
 
 Rules that keep the frame exact:
 
-- **Text stays an exported layer in a showcase.** Never retype it in HTML there: fonts, kerning, and line metrics will not match. On a website, text is live HTML (see "Two contexts").
+- **Text stays an exported layer in a showcase.** Never retype it in HTML there: fonts, kerning, and line metrics will not match. On a website, text is live HTML (see "Two contexts"). From a screenshot, there is no exported layer; follow the text rows in A2.
 - **Keep Figma's z order.** Static layers can sit between animated ones in the same order the tree has them.
 - **Frame strokes usually draw above children.** Render a card's stroke as a separate overlay above its clipped content, then confirm against the reference: a glow inside the card can tint the stroke in Figma's render.
 - **Containers whose children move on their own.** The API always exports a frame together with its children, so exporting a card or panel bakes in everything inside it. When its children must load or act separately, rebuild the container in CSS from the node data: fills, corner radii, inside strokes (including `individualStrokeWeights`), and effects. Then export each child separately.
@@ -196,6 +233,7 @@ Render `?still` at 2x and compare it with the reference before any motion work.
 
 - PSNR for the whole frame and for each container, after a light blur (`gblur sigma≈1.2`) so sub pixel antialiasing does not dominate. Aim above 35 dB overall and above 30 dB per container. Text heavy containers sit near 30 dB because 3x layers are resampled to 2x; if one is lower, retest it at `sigma≈2.5`, where text edges stop counting and only structure remains.
 - Look at a blurred, amplified difference image. It reveals structural errors: a glow placed too high, wrong stacking, a missing stroke, a shifted shadow.
+- **Screenshot sources: also score the surfaces alone.** Lifted layers carry the surface colour inside their boxes, so they hide errors in the rebuilt surface beneath them and inflate the score. Mask out the lifted and cropped regions and score the rest; it must pass the same thresholds.
 - **Do not chase sub pixel offsets.** Measuring at 2x cannot resolve errors under half a pixel, and "corrections" overshoot. Fix structure, not antialiasing.
 
 ---
@@ -266,7 +304,7 @@ The intro is only the opening. The main act is every visual **acting out what it
 - **Start and end on the exact design.** Each story leaves the Figma frame, acts, and comes back to it. At rest, the frame equals `?still`.
 - **Use the design's own elements.** Cards, rows, bars, dots, chips, and tooltips from the design. Helpers the story needs (a cursor, duplicate stack items, extra pulses) must match the design's style, and are hidden in `?still`.
 - **Changing text only when it is the point.** Counters, typing, and tooltip values. All other text stays still.
-  - **Typing** reveals the exported text layer glyph by glyph, never as a smooth wipe. Find the glyph boundaries from the empty alpha columns of the text PNG, step the reveal one glyph every 45 to 70ms, and show a caret at the edge that blinks once a second while idle. Deleting runs the same steps backwards, a little faster.
+  - **Typing** reveals the exported text layer glyph by glyph, never as a smooth wipe. Find the glyph boundaries from the empty alpha columns of the text PNG. Touching pairs (`tt`, `/w`, `fi`) leave no empty column, so compare the step count with the string's character count and split each wide run at its faintest column until they match. Then step the reveal one glyph every 45 to 70ms, and show a caret at the edge that blinks once a second while idle. Deleting runs the same steps backwards, a little faster.
   - **Counters** need live text in the design's font at the exact size and weight, landing on the design's exact text at rest.
 - **Obvious, not busy.** Every card with a story shows a clear action every one to two seconds. A story is made of beats (a pulse leaves, a node lights, the arrow fires), and its beats provide that rhythm. If a viewer cannot tell the frame is animated within two seconds, the stories are too timid ("make more movement"). Calm screens, such as a document dashboard, may rest after load if the user prefers. Ask once.
 - **Text only cards get no story** in a showcase. They rise in with their card and rest. Not every card needs to move; every visual does.
@@ -355,7 +393,7 @@ Run these on the recorded frames (C1) before encoding.
   - **Separate cards:** during the story phase, every pixel outside the cards (and their shadows, when they have any) must be identical to the `?still` frame, so no story, helper, or content escapes its card. The intro frames are excluded, because the cards' own rise moves pixels there; the contact sheet must show contents moving with their card, never ahead of it or outside it.
 - **Seam check.** The first frame of the export window equals the frame one cycle later.
 - **Empty beat check.** Every frame of the empty beat equals the frame before `__start`. The seam check cannot catch JS state that failed to reset, because both its frames are at loop time 0; this one can.
-- **Rest check.** The last frame before the dissolve equals `?still` at the capture scale, proving every story came back to the design.
+- **Rest check.** The last frame before the dissolve equals the landed frame, the one at the end of the intro just before the first story (PSNR `inf`). That proves every story came back to the design. Then compare it with `?still` at the capture scale: it should be very close (above about 38 dB) but may not be identical, because Chrome rasterizes an element that has run a transition slightly differently. A structural difference in that comparison is a bug.
 - **Contact sheet.** Tile frames at key moments (empty, mid intro, landed, several points through the stories, mid dissolve, end) and look for overflow, ghosting, pops, and stories too timid to notice.
 
 ---
@@ -407,7 +445,7 @@ On the page side, in `?capture`:
 |---|---|
 | `<name>-x.mp4` | H.264, `yuv420p`, 60fps, CRF 14–15, preset slow, `+faststart`, max 1920×1200, even dimensions |
 | `<name>-loop.gif` | 960px wide, 15–20fps, about 2 to 3MB, for the website |
-| `<name>-800x500.gif` | Always delivered. When the frame has wide empty borders (most card and bento frames), crop to the content with about 40px of margin at exactly 1.6:1. When the content fills the frame, fit it and pad with the page background colour. On a photo background, always crop, so no flat band sits beside the photo. 20fps, 12fps if heavy |
+| `<name>-800x500.gif` | Always delivered. When the frame has wide empty borders (most card and bento frames), crop to the content at exactly 1.6:1, with about 40 CSS px of margin on the tighter axis; the other axis grows to reach the ratio. When the content fills the frame, fit it and pad with the page background colour. On a photo background, always crop, so no flat band sits beside the photo. 20fps, 12fps if heavy |
 
 ```bash
 ffmpeg -start_number $A -framerate 60 -i frames/%05d.png -frames:v $N \
@@ -479,6 +517,7 @@ Every motion and export value lives here. Edit this section and the rest of the 
 **Fidelity**
 - [ ] Reference frame rendered from the source
 - [ ] Every moving element exported as its own layer, text included
+- [ ] Screenshot source: pixel ratio found, each element rebuilt, lifted, or cropped (A2), hidden areas never invented silently, the list shown to the user before animating
 - [ ] Figma z order kept, strokes above children, group shadow on the union
 - [ ] Background is the original image, positioned by its transform, verified by PSNR
 - [ ] Every variant keeps the background, frosted panels blur the photo behind them
