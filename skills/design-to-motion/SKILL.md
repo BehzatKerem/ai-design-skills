@@ -34,18 +34,27 @@ If the request does not say which, look at where you are working: inside a site'
 
 ### Website: which sections get which motion
 
-Scan the page section by section. Apply this skill only where a section has a visual part. Never animate a text section with it.
+Scan the page section by section. Apply this skill only where a section has a visual part, plus the hero (below). Never animate any other text section with it.
 
 | Section | Apply |
 |---|---|
+| **Hero (always)**, with or without a visual: the header, headline, subtext, buttons, and proof line | The hero appear (below) on page load. Any visual inside the hero then follows its own row in this table |
 | Bento and feature sections: cards with text plus a visual (a chart, list, flow, calendar, prompt, player) | Card intro on scroll (B2, `card` kind, text included), then a story loop on each card's visual (B4). This is the main use on a landing page |
 | Product or dashboard mockup (a hero shot of the app, a product screenshot) | The loading intro on scroll: surfaces stay, contents load (A5). Then **ask the user** whether they also want stories after loading. Do not add them unasked |
 | Logo rows, integrations | A marquee or a gentle light up story |
 | Text only sections: headline blocks, testimonials, FAQ, pricing, CTA, footer | Not this skill. Use the page's normal scroll reveal (for example `landing-page-design` B7) |
 
+**The hero appear.** Every website gets it, every time, even when the hero is only text.
+
+- **The page opens plain.** The first frame is the page background alone (and the static joined surfaces of an app frame mockup, if the hero has one). No text, no header, no buttons yet.
+- **A really small animation.** Each element rises just 6px and resolves from a 2px blur to sharp, with an opacity fade. Nothing slides far, nothing scales, nothing bounces. It should feel like the page settling into place, not like a show.
+- **Fast and in reading order.** Header first, then the badge, the headline line by line, the subtext, the buttons, and the proof line, 50 to 70ms apart. The whole text appear lands within about 1.2s.
+- **On page load, once.** It plays when the page first loads, not on scroll, and never replays when the visitor scrolls back up.
+- Visuals in the hero (floating cards, a product mockup) start their own intro after the headline, following their row in the table.
+
 Website rules:
 
-- **Trigger with `IntersectionObserver`.** Start the intro when about 30% of the section is visible. Play it once. Never use a scroll listener.
+- **Trigger with `IntersectionObserver`.** Below the hero, start each section's intro when about 30% of it is visible. Play it once. Never use a scroll listener.
 - **Pause stories off screen.** Stop the clock when the section leaves the viewport and resume it on return.
 - **Stagger by reading order inside the section**, never across the whole page.
 - **Respect the site's system.** Use its components, tokens, radii, and fonts. Fidelity to the design still applies (A7), compared section by section.
@@ -451,6 +460,7 @@ Every motion and export value lives here. Edit this section and the rest of the 
 | Opacity and blur duration | 0.7–0.8s with `--e2` |
 | Wipe duration | 0.7s, slow bars 1.1s, with `--io` |
 | Card rise | 24px, `scale(0.985)`, `blur(6px)`, 0.9s transform with `--e`, 0.6s opacity |
+| Hero appear (website) | 6px rise, 2px blur, 0.8s transform with `--e`, 0.6s opacity, 50–70ms stagger, done within about 1.2s |
 | Container stagger | 80–90ms |
 | Tray and folder rise | 40px |
 | Typing | one glyph every 45–70ms, caret blink 1s |
@@ -476,6 +486,7 @@ Every motion and export value lives here. Edit this section and the rest of the 
 
 **Context and layout**
 - [ ] Context decided: showcase, or website with each section mapped (text only sections untouched)
+- [ ] Website hero: page opens plain, then the small hero appear plays once on load
 - [ ] Website mockups: asked the user before adding stories after the loading intro
 - [ ] Layout identified: app frame with joined surfaces, or separate cards
 - [ ] App frame: joined surfaces present, opaque, and still in the empty state, Figma stacking kept where they meet
