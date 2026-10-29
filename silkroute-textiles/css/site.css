@@ -775,7 +775,9 @@ h1, h2, h3 { font-weight: 600; text-wrap: balance; }
   gap: var(--s-200);
 }
 
-.foot p {
+.foot p,
+.foot address {
+  font-style: normal;
   font-size: 14px;
   line-height: 20px;
   color: var(--muted);

@@ -95,16 +95,6 @@
   if (!form || !confirm) return;
 
   const storageKey = "silkroute-note";
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  const formatDay = (iso) => {
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return "";
-    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-  };
 
   const readNote = () => {
     try {
@@ -169,7 +159,7 @@
 
     if (firstBad) firstBad.focus();
     if (firstBad) return null;
-    return { name, company, email, trade, goods, at: new Date().toISOString() };
+    return { name, company, email, trade, goods };
   };
 
   const showKept = (data) => {
@@ -186,10 +176,7 @@
 
     const when = document.createElement("p");
     when.className = "hint";
-    const day = formatDay(data.at);
-    when.textContent = day
-      ? `Kept on ${day}. Close the tab and it is gone.`
-      : "Close the tab and it is gone.";
+    when.textContent = "Close the tab and it is gone.";
 
     const again = document.createElement("button");
     again.type = "button";
