@@ -615,6 +615,18 @@ h1, h2, h3 { font-weight: 600; text-wrap: balance; }
   text-wrap: pretty;
 }
 
+.record a,
+.prose a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: color 300ms var(--ease);
+}
+
+.record a:hover,
+.prose a:hover { color: var(--muted); }
+
 .text-link {
   display: inline-flex;
   align-items: center;
@@ -799,6 +811,8 @@ h1, h2, h3 { font-weight: 600; text-wrap: balance; }
   transition: color 300ms var(--ease);
 }
 
+.foot address a { overflow-wrap: anywhere; }
+
 .foot a:hover { color: var(--muted); }
 .foot a[aria-current="page"] { color: var(--ink); }
 
@@ -890,6 +904,8 @@ h1, h2, h3 { font-weight: 600; text-wrap: balance; }
   .wordmark,
   .nav-desk a,
   .text-link,
+  .record a,
+  .prose a,
   .qa summary,
   .lines span,
   .mobile-link,
